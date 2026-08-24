@@ -1,0 +1,35 @@
+name: Apply UI Refresh
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-ui-refresh.yml'
+      - 'scripts/refresh_ui.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply login and dashboard refresh
+        run: python scripts/refresh_ui.py
+
+      - name: Commit generated UI update
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No UI changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "feat: modernize login and dashboard UI"
+          git push origin HEAD:main
