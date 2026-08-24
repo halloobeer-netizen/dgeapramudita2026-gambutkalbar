@@ -11,9 +11,9 @@
         }
       },
       "khgs": {
-        ".read": "auth != null",
+        ".read": "auth != null && (root.child('survei/roles').child(auth.uid).val() === 'admin' || root.child('survei/roles').child(auth.uid).val() === 'editor' || root.child('survei/roles').child(auth.uid).val() === 'viewer')",
+        ".write": "auth != null && root.child('survei/roles').child(auth.uid).val() === 'admin'",
         "$khgId": {
-          ".write": "auth != null && root.child('survei/roles').child(auth.uid).val() === 'admin'",
           "points": {
             "$pointIndex": {
               ".write": "auth != null && (root.child('survei/roles').child(auth.uid).val() === 'admin' || (root.child('survei/roles').child(auth.uid).val() === 'editor' && newData.exists()))"
