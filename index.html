@@ -665,6 +665,22 @@
         max-width:220px;
       }
     }
+
+    /* ===== ROLE ACCESS CONTROL 2026 ===== */
+    .role-badge {
+      display:inline-flex; align-items:center; justify-content:center;
+      min-height:32px; padding:6px 10px; border-radius:999px;
+      background:rgba(255,255,255,.13); border:1px solid rgba(255,255,255,.20);
+      color:#fff; font-size:.68rem; font-weight:800; text-transform:uppercase;
+      letter-spacing:.05em; white-space:nowrap;
+    }
+    .role-badge[data-role="admin"] { background:rgba(72,199,116,.22); }
+    .role-badge[data-role="editor"] { background:rgba(255,193,7,.18); }
+    .role-badge[data-role="viewer"] { background:rgba(255,255,255,.10); }
+    .permission-hidden { display:none !important; }
+    @media (max-width:620px) {
+      .role-badge { min-height:28px; padding:5px 8px; font-size:.59rem; }
+    }
   </style>
 </head>
 <body>
@@ -698,6 +714,7 @@
       <div class="header-right">
         <button class="btn-home" onclick="goDashboard()" title="Kembali ke Dasbor">🏠 Dasbor</button>
         <span class="user-chip" id="userName">User</span>
+        <span class="role-badge" id="roleBadge" data-role="viewer">Viewer</span>
         <button class="btn btn-sm btn-outline" onclick="logout()">Keluar</button>
       </div>
     </div>
@@ -714,8 +731,8 @@
           <div class="dash-date" id="dashDate">Survei Lapangan 2026</div>
         </div>
         <div class="dash-actions">
-          <button class="btn btn-outline btn-sm" onclick="openImportModal()">📥 Import Excel</button>
-          <button class="btn btn-primary btn-sm" onclick="openAddKHG()">＋ Tambah KHG</button>
+          <button class="btn btn-outline btn-sm" data-permission="importData" onclick="openImportModal()">📥 Import Excel</button>
+          <button class="btn btn-primary btn-sm" data-permission="manageKHG" onclick="openAddKHG()">＋ Tambah KHG</button>
         </div>
         <div class="stats-row">
           <div class="stat-card green">
@@ -791,7 +808,7 @@
             <h2 id="khgTitle">—</h2>
             <p style="font-size:0.78rem;color:var(--muted);" id="khgDesc"></p>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="openAddPoint()">+ Tambah Titik</button>
+          <button class="btn btn-primary btn-sm" data-permission="addPoint" onclick="openAddPoint()">+ Tambah Titik</button>
         </div>
         <div style="margin-bottom:12px;">
           <input type="search" id="pointSearch" placeholder="🔍 Cari titik (nama, surveyor, koordinat...)" 
@@ -810,7 +827,7 @@
         <div class="section-title">
           <h2 id="previewTitle">Preview Titik</h2>
           <div class="actions-row">
-            <button class="btn btn-outline btn-sm" onclick="editFromPreview()">✏️ Edit</button>
+            <button class="btn btn-outline btn-sm" data-permission="editPoint" onclick="editFromPreview()">✏️ Edit</button>
             <button class="btn btn-outline btn-sm" onclick="exportPointWordFromPreview()">📄 Word</button>
           </div>
         </div>
@@ -912,7 +929,7 @@
       </div>
       <div class="bottom-bar">
         <button class="btn btn-outline" onclick="exportPointWord()">📄 Export Word</button>
-        <button class="btn btn-primary" onclick="savePoint()">💾 Simpan</button>
+        <button class="btn btn-primary" data-permission="editPoint" onclick="savePoint()">💾 Simpan</button>
       </div>
     </div>
   </div>
@@ -977,8 +994,63 @@
     const KHG_REF = db.ref('survei/khgs');
 
     // ========== STATE ==========
-    let state = { user: null, khgs: [], currentKHG: null, editingPointId: null, previewPointId: null, importRows: [], photos: {}, docs: [], map: null, currentPhotoField: null };
+    let state = { user: null, role: 'viewer', khgs: [], currentKHG: null, editingPointId: null, previewPointId: null, importRows: [], photos: {}, docs: [], map: null, currentPhotoField: null };
     let firebaseReady = false;
+
+
+
+    // ========== ROLE ACCESS CONTROL ==========
+    // Roles: admin, editor, viewer. Default is viewer when no role exists.
+    const ROLE_PERMISSIONS = {
+      admin:  { manageKHG:true, importData:true, addPoint:true, editPoint:true, deletePoint:true },
+      editor: { manageKHG:false, importData:false, addPoint:true, editPoint:true, deletePoint:false },
+      viewer: { manageKHG:false, importData:false, addPoint:false, editPoint:false, deletePoint:false }
+    };
+
+    function can(permission) {
+      return !!(ROLE_PERMISSIONS[state.role] && ROLE_PERMISSIONS[state.role][permission]);
+    }
+
+    function requirePermission(permission, message='Anda tidak memiliki izin untuk tindakan ini.') {
+      if (can(permission)) return true;
+      toast('🔒 ' + message);
+      return false;
+    }
+
+    async function loadUserRole() {
+      state.role = 'viewer';
+      if (!state.user?.uid) { applyRoleUI(); return; }
+      try {
+        const snap = await db.ref('survei/roles/' + state.user.uid).once('value');
+        const role = String(snap.val() || 'viewer').toLowerCase();
+        state.role = ['admin','editor','viewer'].includes(role) ? role : 'viewer';
+      } catch (err) {
+        console.error('Gagal membaca role:', err);
+        state.role = 'viewer';
+      }
+      applyRoleUI();
+    }
+
+    function applyRoleUI() {
+      const badge = document.getElementById('roleBadge');
+      if (badge) {
+        const labels = { admin:'Admin', editor:'Editor', viewer:'Viewer' };
+        badge.textContent = labels[state.role] || 'Viewer';
+        badge.dataset.role = state.role;
+        badge.title = state.user?.email ? `${state.user.email} • ${badge.textContent}` : badge.textContent;
+      }
+
+      document.querySelectorAll('[data-permission]').forEach(el => {
+        el.classList.toggle('permission-hidden', !can(el.dataset.permission));
+      });
+    }
+
+    function saveEditorPoint(data, existingIndex) {
+      if (!state.currentKHG?.id) return Promise.reject(new Error('KHG tidak ditemukan'));
+      const isEdit = existingIndex >= 0;
+      const index = isEdit ? existingIndex : (state.currentKHG.points?.length || 0);
+      return KHG_REF.child(state.currentKHG.id).child('points').child(String(index)).set(data);
+    }
 
     // Simpan seluruh data KHG ke Firebase (realtime)
     function persist() {
@@ -1067,11 +1139,14 @@
       }
     }
 
-    function enterApp() {
+    async function enterApp() {
+      await loadUserRole();
       document.getElementById('view-login').classList.remove('active');
       document.getElementById('appRoot').classList.remove('hidden');
       document.getElementById('userName').textContent = state.user?.name || 'User';
+      applyRoleUI();
       goDashboard();
+      if (state.role === 'viewer') toast('Mode Viewer: hanya dapat melihat data');
     }
     function goDashboard() { showView('dashboard'); renderDashboard(); }
 
@@ -1162,16 +1237,19 @@
             <h3>📍 ${k.nama}</h3>
             <div class="meta">${k.points?.length || 0} Titik • ${k.deskripsi || 'Tidak ada deskripsi'}</div>
           </div>
-          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteKHG('${k.id}')" title="Hapus KHG">Hapus</button>
+          ${can('manageKHG') ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteKHG('${k.id}')" title="Hapus KHG">Hapus</button>` : ''}
         </div>`).join('');
+      applyRoleUI();
     }
 
     function openAddKHG() {
+      if (!requirePermission('manageKHG', 'Hanya Admin yang dapat menambah KHG.')) return;
       document.getElementById('khg_nama').value = '';
       document.getElementById('khg_desc').value = '';
       document.getElementById('modalKHG').classList.add('show');
     }
     function saveKHG() {
+      if (!requirePermission('manageKHG', 'Hanya Admin yang dapat menyimpan KHG.')) return;
       const nama = document.getElementById('khg_nama').value.trim();
       if (!nama) return toast('Nama KHG wajib diisi');
       state.khgs.push({ id: 'khg_' + Date.now(), nama, deskripsi: document.getElementById('khg_desc').value.trim(), points: [], createdAt: new Date().toISOString() });
@@ -1179,6 +1257,7 @@
     }
 
     function deleteKHG(id) {
+      if (!requirePermission('manageKHG', 'Hanya Admin yang dapat menghapus KHG.')) return;
       const khg = state.khgs.find(k => k.id === id);
       if (!khg) return;
       const jumlah = khg.points?.length || 0;
@@ -1254,13 +1333,15 @@
           </div>
           <div class="actions-row">
             <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); previewPoint('${p.id}')">👁️</button>
-            <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); editPoint('${p.id}')">Edit</button>
-            <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deletePoint('${p.id}')">Hapus</button>
+            ${can('editPoint') ? `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); editPoint('${p.id}')">Edit</button>` : ''}
+            ${can('deletePoint') ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deletePoint('${p.id}')">Hapus</button>` : ''}
           </div>
         </div>`).join('');
+      applyRoleUI();
     }
 
     function deletePoint(id) {
+      if (!requirePermission('deletePoint', 'Hanya Admin yang dapat menghapus titik.')) return;
       if (!confirm('Hapus titik ini?')) return;
       state.currentKHG.points = state.currentKHG.points.filter(p => p.id !== id);
       persist(); renderPoints(); toast('Titik dihapus');
@@ -1335,11 +1416,13 @@
     }
 
     function editFromPreview() {
+      if (!requirePermission('editPoint', 'Akun Anda tidak memiliki izin mengedit titik.')) return;
       if (state.previewPointId) editPoint(state.previewPointId);
     }
 
     // FORM
     function openAddPoint() {
+      if (!requirePermission('addPoint', 'Akun Anda tidak memiliki izin menambah titik.')) return;
       state.editingPointId = null; state.photos = {}; state.docs = [];
       document.getElementById('formTitle').textContent = 'Tambah Titik Survei';
       document.getElementById('formSubtitle').textContent = 'KHG: ' + state.currentKHG.nama;
@@ -1351,6 +1434,7 @@
     }
 
     function editPoint(id) {
+      if (!requirePermission('editPoint', 'Akun Anda tidak memiliki izin mengedit titik.')) return;
       const p = state.currentKHG.points.find(x => x.id === id);
       if (!p) return;
       state.editingPointId = id;
@@ -1400,16 +1484,30 @@
       };
     }
 
-    function savePoint() {
+    async function savePoint() {
+      if (!requirePermission('editPoint', 'Akun Anda tidak memiliki izin menyimpan titik.')) return;
       const data = collectForm();
       if (!data.surveyor || !data.namaTitik || !data.tanggal) {
         toast('Nama Surveyor, Nama Titik, dan Tanggal wajib diisi'); switchTab('umum'); return;
       }
       if (!state.currentKHG.points) state.currentKHG.points = [];
       const idx = state.currentKHG.points.findIndex(p => p.id === data.id);
-      if (idx >= 0) state.currentKHG.points[idx] = data;
-      else state.currentKHG.points.unshift(data);
-      persist(); toast('✅ Titik berhasil disimpan'); showView('khg'); renderPoints();
+
+      try {
+        if (state.role === 'admin') {
+          if (idx >= 0) state.currentKHG.points[idx] = data;
+          else state.currentKHG.points.unshift(data);
+          persist();
+        } else if (state.role === 'editor') {
+          await saveEditorPoint(data, idx);
+        } else {
+          return toast('🔒 Mode Viewer tidak dapat menyimpan perubahan.');
+        }
+        toast('✅ Titik berhasil disimpan'); showView('khg');
+      } catch (err) {
+        console.error(err);
+        toast('❌ Gagal simpan: ' + err.message);
+      }
     }
 
     // GPS & MAP
@@ -1440,7 +1538,7 @@
     }
 
     // PHOTO
-    function triggerPhoto(box) { state.currentPhotoField = box.dataset.field; document.getElementById('photoInput').click(); }
+    function triggerPhoto(box) { if (!requirePermission('editPoint', 'Akun Anda tidak memiliki izin mengubah foto.')) return; state.currentPhotoField = box.dataset.field; document.getElementById('photoInput').click(); }
     document.getElementById('photoInput').addEventListener('change', function(e) {
       const file = e.target.files[0]; if (!file || !state.currentPhotoField) return;
       const reader = new FileReader();
@@ -1467,7 +1565,7 @@
     }
 
     // DOCUMENT UPLOAD
-    function triggerDoc() { document.getElementById('docInput').click(); }
+    function triggerDoc() { if (!requirePermission('editPoint', 'Akun Anda tidak memiliki izin mengubah dokumen.')) return; document.getElementById('docInput').click(); }
     document.getElementById('docInput').addEventListener('change', function(e) {
       const file = e.target.files[0]; if (!file) return;
       if (file.size > 5 * 1024 * 1024) { toast('File terlalu besar (max 5MB)'); return; }
@@ -1539,6 +1637,7 @@ table{border-collapse:collapse;width:100%;margin:6px 0}td,th{border:1px solid #9
 
     // IMPORT
     function openImportModal() {
+      if (!requirePermission('importData', 'Hanya Admin yang dapat import Excel.')) return;
       const sel = document.getElementById('import_khg');
       sel.innerHTML = state.khgs.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
       if (!state.khgs.length) return toast('Buat KHG terlebih dahulu');
@@ -1603,6 +1702,7 @@ table{border-collapse:collapse;width:100%;margin:6px 0}td,th{border:1px solid #9
     }
 
     function doImport() {
+      if (!requirePermission('importData', 'Hanya Admin yang dapat import data.')) return;
       const khg = state.khgs.find(k => k.id === document.getElementById('import_khg').value);
       if (!khg) return;
       if (!khg.points) khg.points = [];
