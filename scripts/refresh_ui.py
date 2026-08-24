@@ -3,121 +3,138 @@ from pathlib import Path
 p = Path("index.html")
 s = p.read_text(encoding="utf-8")
 
-MARKER = "/* ===== PROFESSIONAL DASHBOARD 2026 ===== */"
+MARKER = "/* ===== DASHBOARD REFINEMENT 2026 ===== */"
 if MARKER in s:
-    print("Professional dashboard already applied")
+    print("Dashboard refinement already applied")
     raise SystemExit(0)
 
 css = r'''
-    /* ===== PROFESSIONAL DASHBOARD 2026 ===== */
-    #appRoot {
-      --bg: #f5f8f6;
-      --card: #ffffff;
-      --text: #17241c;
-      --muted: #6b7770;
-      --border: #e3ebe6;
-      --primary: #087a3d;
-      --primary-dark: #075f32;
-      --accent: #edf7f1;
-      background: #f5f8f6;
-      min-height: 100vh;
+    /* ===== DASHBOARD REFINEMENT 2026 ===== */
+    #appRoot .app-header { min-height:72px; }
+    #appRoot .brand { gap:11px; }
+    #appRoot .brand h1 { font-weight:800; }
+    #appRoot .header-right { gap:8px; }
+    #appRoot .user-chip {
+      max-width:170px; padding:8px 11px; border-radius:999px;
+      background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16);
+      font-weight:700; color:#fff;
     }
-    #appRoot .app-header {
-      background: linear-gradient(115deg, #075f32, #0a713a);
-      border: 0;
-      padding: 13px 18px;
-      box-shadow: 0 3px 16px rgba(7,95,50,.16);
+    #appRoot .btn-home, #appRoot .app-header .btn-outline { padding:8px 12px; border-radius:10px; font-weight:700; }
+
+    .dash-intro { padding-top:2px; }
+    .dash-date::before { content:'▣'; margin-right:7px; color:var(--primary); }
+    .dash-actions {
+      display:flex; gap:8px; flex-wrap:wrap; margin-top:13px;
     }
-    #appRoot .brand-logo { width: 46px; height: 46px; min-width: 46px; border-radius: 12px; background:#fff; }
-    #appRoot .brand h1 { color:#fff; font-size:.98rem; letter-spacing:-.01em; }
-    #appRoot .brand p { color:rgba(255,255,255,.78); font-size:.7rem; }
-    #appRoot .user-chip { color:rgba(255,255,255,.86); }
-    #appRoot .btn-home, #appRoot .app-header .btn-outline {
-      background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.22);
+    .dash-actions .btn { box-shadow:none; }
+
+    #view-dashboard .stat-card { transition:transform .18s ease, box-shadow .18s ease; }
+    #view-dashboard .stat-card:hover { transform:translateY(-2px); box-shadow:0 12px 28px rgba(20,55,35,.09); }
+    #view-dashboard .stat-card .stat-note { line-height:1.4; }
+
+    #view-dashboard .summary-box { position:relative; overflow:hidden; }
+    #view-dashboard .summary-box::after {
+      content:''; position:absolute; width:180px; height:180px; border-radius:50%;
+      background:radial-gradient(circle, rgba(10,139,72,.07), rgba(10,139,72,0) 70%);
+      right:-55px; top:-65px; pointer-events:none;
     }
-    #view-dashboard .container { max-width:1040px; padding:24px 18px 110px; }
-    .dash-intro { display:flex; justify-content:space-between; gap:18px; align-items:center; margin:0 0 22px; }
-    .dash-eyebrow { color:var(--primary); font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.1em; margin-bottom:5px; }
-    .dash-intro h2 { font-size:clamp(1.45rem,3vw,2rem); line-height:1.15; letter-spacing:-.035em; }
-    .dash-intro p { color:var(--muted); font-size:.86rem; margin-top:5px; }
-    .dash-date { background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 14px; color:#415047; font-size:.78rem; box-shadow:0 5px 18px rgba(20,55,35,.05); white-space:nowrap; }
-    #view-dashboard .stats-row { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-bottom:14px; }
-    #view-dashboard .stat-card, #view-dashboard .stat-card.green {
-      position:relative; min-height:132px; padding:20px; background:#fff; color:var(--text); border:1px solid var(--border); border-radius:16px; box-shadow:0 7px 22px rgba(20,55,35,.055); overflow:hidden;
+    #view-dashboard .progress-wrap, #view-dashboard .summary-grid, #view-dashboard .recent-list { position:relative; z-index:1; }
+    #view-dashboard .progress-sub { margin-top:8px; }
+
+    #view-dashboard .recent-list::before { margin-top:2px; margin-bottom:9px; }
+    #view-dashboard .recent-item {
+      display:grid; grid-template-columns:minmax(100px,1fr) minmax(120px,1.35fr) auto;
+      gap:12px; align-items:center; min-height:46px; padding:9px 10px;
+      border-bottom:1px solid #edf1ee; border-radius:8px;
     }
-    #view-dashboard .stat-card::before { content:''; position:absolute; width:62px; height:62px; right:18px; top:18px; border-radius:50%; background:#e8f4ed; }
-    #view-dashboard .stat-card::after { position:absolute; right:38px; top:33px; font-size:1.55rem; z-index:1; }
-    #view-dashboard .stat-card.green::after { content:'▰'; color:var(--primary); transform:rotate(90deg); }
-    #view-dashboard .stat-card:not(.green)::after { content:'●'; color:var(--primary); }
-    #view-dashboard .stat-card .label { color:#526158; font-size:.8rem; font-weight:700; }
-    #view-dashboard .stat-card .value { color:var(--primary-dark); font-size:2.15rem; font-weight:800; margin-top:9px; letter-spacing:-.04em; }
-    #view-dashboard .stat-card .stat-note { color:var(--muted); font-size:.72rem; margin-top:2px; }
-    #view-dashboard .summary-box { background:#fff; border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:0 7px 22px rgba(20,55,35,.055); margin-bottom:18px; }
-    #view-dashboard .summary-box h3 { color:var(--primary-dark); font-size:1rem; margin-bottom:14px; }
-    #view-dashboard .progress-header { font-size:.86rem; }
-    #view-dashboard .progress-header .pct { color:var(--primary); font-size:1.65rem; font-weight:800; }
-    #view-dashboard .progress-bar-bg { height:11px; background:#eaf1ed; }
-    #view-dashboard .progress-bar-fill { background:linear-gradient(90deg,#0a8b48,#08733c); }
-    #view-dashboard .summary-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
-    #view-dashboard .summary-item { background:#f7faf8; border:1px solid var(--border); border-radius:12px; padding:12px; }
-    #view-dashboard .summary-item .s-label { font-size:.7rem; }
-    #view-dashboard .summary-item .s-value { color:var(--primary-dark); font-size:1.1rem; margin-top:3px; }
-    #view-dashboard .recent-list { margin-top:18px; }
-    #view-dashboard .recent-list::before { content:'Data Terbaru'; display:block; color:#26372d; font-size:.86rem; font-weight:800; margin-bottom:6px; }
-    #view-dashboard .recent-item { padding:10px 4px; font-size:.77rem; }
-    #view-dashboard .section-title { margin-top:22px; margin-bottom:8px; }
-    #view-dashboard .section-title h2 { font-size:1.08rem; color:#1b2d22; }
-    #view-dashboard .khg-card { border-radius:15px; padding:16px; box-shadow:0 5px 18px rgba(20,55,35,.045); }
-    #view-dashboard .khg-card h3 { color:var(--primary-dark); font-size:.92rem; }
-    #view-dashboard .btn { border-radius:10px; }
-    #view-dashboard .btn-primary { background:var(--primary); }
-    #view-dashboard .btn-outline { background:#fff; border-color:#dbe7df; }
-    @media (min-width: 760px) {
-      #view-dashboard .summary-box { padding:24px; }
+    #view-dashboard .recent-item:hover { background:#f8fbf9; }
+    #view-dashboard .recent-point { color:var(--primary-dark); font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #view-dashboard .recent-khg { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    #view-dashboard .recent-date { color:#7a867f; font-size:.72rem; white-space:nowrap; }
+
+    #view-dashboard .section-title { padding-top:2px; }
+    #view-dashboard .section-title > div:last-child { gap:8px !important; }
+    #view-dashboard .section-title + p { line-height:1.55; }
+    #view-dashboard #khgList { display:grid; gap:10px; }
+    #view-dashboard .khg-card {
+      display:grid !important; grid-template-columns:48px minmax(0,1fr) auto; align-items:center !important;
+      gap:13px !important; padding:15px 16px !important; margin-bottom:0;
+      border:1px solid var(--border); background:#fff;
     }
-    @media (max-width: 620px) {
-      #appRoot .app-header { padding:10px 12px; }
-      #appRoot .brand-logo { width:40px; height:40px; min-width:40px; }
-      #appRoot .brand h1 { font-size:.82rem; }
-      #appRoot .brand p { font-size:.6rem; }
-      #appRoot .user-chip { display:none; }
-      #view-dashboard .container { padding:18px 14px 100px; }
-      .dash-intro { align-items:flex-start; margin-bottom:16px; }
-      .dash-intro h2 { font-size:1.45rem; }
-      .dash-intro p { font-size:.78rem; max-width:260px; }
-      .dash-date { display:none; }
-      #view-dashboard .stats-row { gap:10px; }
-      #view-dashboard .stat-card, #view-dashboard .stat-card.green { min-height:116px; padding:15px; border-radius:14px; }
-      #view-dashboard .stat-card::before { width:44px; height:44px; right:12px; top:12px; }
-      #view-dashboard .stat-card::after { right:26px; top:21px; font-size:1.1rem; }
-      #view-dashboard .stat-card .label { font-size:.72rem; max-width:75%; }
-      #view-dashboard .stat-card .value { font-size:1.75rem; margin-top:10px; }
-      #view-dashboard .summary-box { padding:16px; border-radius:14px; }
-      #view-dashboard .summary-grid { grid-template-columns:1fr 1fr; }
-      #view-dashboard .recent-item { align-items:flex-start; }
-      #view-dashboard .section-title { align-items:center; }
+    #view-dashboard .khg-card::before {
+      content:'⌖'; width:46px; height:46px; border-radius:13px;
+      display:flex; align-items:center; justify-content:center;
+      color:var(--primary); background:#eaf6ef; font-size:1.35rem; font-weight:800;
+    }
+    #view-dashboard .khg-card > div { min-width:0; }
+    #view-dashboard .khg-card h3 { margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #view-dashboard .khg-card .meta { line-height:1.45; }
+    #view-dashboard .khg-card .btn-danger { opacity:.72; border-radius:9px; }
+    #view-dashboard .khg-card .btn-danger:hover { opacity:1; }
+
+    @media (max-width:620px) {
+      #appRoot .app-header { min-height:62px; }
+      #appRoot .header-right { gap:5px; }
+      #appRoot .btn-home { display:none; }
+      #appRoot .app-header .btn-outline { padding:7px 10px; font-size:.7rem; }
+      .dash-actions { margin-top:11px; }
+      .dash-actions .btn { flex:1; min-width:120px; }
+      #view-dashboard .recent-item {
+        grid-template-columns:minmax(90px,.85fr) minmax(0,1.15fr);
+        gap:5px 10px; padding:9px 4px;
+      }
+      #view-dashboard .recent-date { grid-column:2; }
+      #view-dashboard .khg-card { grid-template-columns:40px minmax(0,1fr) auto; gap:10px !important; padding:13px !important; }
+      #view-dashboard .khg-card::before { width:40px; height:40px; border-radius:11px; font-size:1.1rem; }
+      #view-dashboard .khg-card .btn-danger { padding:6px 8px; font-size:.68rem; }
+      #view-dashboard .section-title { gap:10px; }
+      #view-dashboard .section-title > div:last-child { width:100%; }
+      #view-dashboard .section-title .btn { flex:1; }
     }
 '''
 
 s = s.replace("  </style>", css + "  </style>", 1)
 
-old_intro = '''        <div style="margin:2px 0 16px;">
-          <div style="font-size:.72rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Dashboard Survei</div>
-          <h2 style="font-size:1.28rem;letter-spacing:-.02em;color:var(--text);">Ringkasan Ekosistem Gambut</h2>
-          <p style="font-size:.8rem;color:var(--muted);margin-top:3px;">Pantau progres KHG dan titik survei dalam satu tampilan.</p>
+# Add quick actions below the dashboard intro, using existing functions only.
+intro_end = '''          <div class="dash-date" id="dashDate">Survei Lapangan 2026</div>
         </div>'''
-new_intro = '''        <div class="dash-intro">
-          <div>
-            <div class="dash-eyebrow">Dashboard Survei</div>
-            <h2>Ringkasan Ekosistem Gambut</h2>
-            <p>Inventarisasi Karakteristik Ekosistem Gambut Kab. Kapuas Hulu, Kalimantan Barat</p>
-          </div>
-          <div class="dash-date" id="dashDate">Survei Lapangan 2026</div>
+intro_new = '''          <div class="dash-date" id="dashDate">Survei Lapangan 2026</div>
+        </div>
+        <div class="dash-actions">
+          <button class="btn btn-outline btn-sm" onclick="openImportModal()">📥 Import Excel</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddKHG()">＋ Tambah KHG</button>
         </div>'''
-s = s.replace(old_intro, new_intro, 1)
-s = s.replace('<div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">dari 1.073 titik</div>', '<div class="stat-note">dari target 1.073 titik</div>', 1)
-s = s.replace('<h2>Dasbor KHG</h2>', '<h2>KHG Aktif</h2>', 1)
-s = s.replace('Kelola Kesatuan Hidrologis Gambut dan hasil surveinya', 'Kelola Kesatuan Hidrologis Gambut dan data hasil survei lapangan', 1)
+if intro_end in s:
+    s = s.replace(intro_end, intro_new, 1)
+
+# Avoid duplicate top-level action buttons in the KHG section while retaining section title.
+old_actions = '''          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" onclick="openImportModal()">📥 Import Excel</button>
+            <button class="btn btn-primary btn-sm" onclick="openAddKHG()">+ Tambah KHG</button>
+          </div>'''
+s = s.replace(old_actions, '', 1)
+
+# Set the date chip from real local date each dashboard render.
+needle = "      const remaining = Math.max(0, TARGET_TOTAL - surveyed);\n"
+addition = """      const remaining = Math.max(0, TARGET_TOTAL - surveyed);\n\n      const dashDate = document.getElementById('dashDate');\n      if (dashDate) {\n        dashDate.textContent = new Intl.DateTimeFormat('id-ID', { weekday:'short', day:'2-digit', month:'short', year:'numeric' }).format(new Date());\n      }\n"""
+if needle in s:
+    s = s.replace(needle, addition, 1)
+
+# Render recent data as a cleaner three-column list while preserving the same source data.
+old_recent = '''      if (recent.length) {
+        recentEl.innerHTML = '<div style="font-size:0.78rem;font-weight:600;margin-bottom:4px;color:var(--muted);">Titik Terbaru</div>' +
+          recent.map(p => `<div class="recent-item"><span>${p.namaTitik || '-'} <small style="color:var(--muted);">(${p.khgNama})</small></span><span style="color:var(--muted);font-size:0.72rem;">${p.tanggal || '-'}</span></div>`).join('');
+      } else recentEl.innerHTML = '';'''
+new_recent = '''      if (recent.length) {
+        recentEl.innerHTML = recent.map(p => `
+          <div class="recent-item">
+            <span class="recent-point">${p.namaTitik || '-'}</span>
+            <span class="recent-khg">${p.khgNama || '-'}</span>
+            <span class="recent-date">${p.tanggal || '-'}</span>
+          </div>`).join('');
+      } else recentEl.innerHTML = '';'''
+if old_recent in s:
+    s = s.replace(old_recent, new_recent, 1)
 
 p.write_text(s, encoding="utf-8")
-print("Professional dashboard applied successfully")
+print("Dashboard refinement applied successfully")
