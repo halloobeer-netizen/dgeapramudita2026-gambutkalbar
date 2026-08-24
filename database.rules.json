@@ -1,0 +1,26 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "survei": {
+      "roles": {
+        "$uid": {
+          ".read": "auth != null && (auth.uid === $uid || root.child('survei/roles').child(auth.uid).val() === 'admin')",
+          ".write": "auth != null && root.child('survei/roles').child(auth.uid).val() === 'admin'",
+          ".validate": "newData.val() === 'admin' || newData.val() === 'editor' || newData.val() === 'viewer'"
+        }
+      },
+      "khgs": {
+        ".read": "auth != null",
+        "$khgId": {
+          ".write": "auth != null && root.child('survei/roles').child(auth.uid).val() === 'admin'",
+          "points": {
+            "$pointIndex": {
+              ".write": "auth != null && (root.child('survei/roles').child(auth.uid).val() === 'admin' || (root.child('survei/roles').child(auth.uid).val() === 'editor' && newData.exists()))"
+            }
+          }
+        }
+      }
+    }
+  }
+}
